@@ -48,7 +48,7 @@ $Services = @(
 # set aws credentials
 If($SetAws)
 {
-  Set-AWSCredentials -AccessKey $InfoObject.AccessKey  -SecretKey $InfoObject.SecretKey
+  Set-AWSCredentials -AccessKey $InfoObject.AccessKey -SecretKey $InfoObject.SecretKey
   Set-DefaultAWSRegion -Region $InfoObject.Region
 }
 
@@ -83,6 +83,7 @@ ForEach ($Service in $Services)
     $Ipv4RangesList = $IpPermission.Ipv4Ranges | Where-Object {$Ipv4 -and $_.CidrIp -ne "$($CidrIpv4.ip)/32" -and $_.Description -like "$($ComputerName) (*)"}
     ForEach ($Ipv4Range in $Ipv4RangesList)
     {
+      # ipv4: revoke rule
       $revokeIpPermission = New-Object Amazon.EC2.Model.IpPermission -Property @{FromPort=$IpPermission.FromPort;ToPort=$IpPermission.ToPort;IpProtocol="$($IpPermission.IpProtocol)";Ipv4Ranges=$Ipv4Range}
       Revoke-EC2SecurityGroupIngress -GroupId $InfoObject.GroupId -IpPermissions $revokeIpPermission
       If($Debug){ Write-Host "[DEBUG]   Revoked IPv4 Rule: FromPort: $($IpPermission.FromPort), ToPort: $($IpPermission.ToPort), IpProtocol: $($IpPermission.IpProtocol), CidrIp: $($Ipv4Range.CidrIp), Description: $($Ipv4Range.Description)" }
@@ -92,6 +93,7 @@ ForEach ($Service in $Services)
     $Ipv6RangesList = $IpPermission.Ipv6Ranges | Where-Object {$Ipv6 -and $_.CidrIpv6 -ne "$($CidrIpv6.ip)/128" -and $_.Description -like "$($ComputerName) (*)"}
     ForEach ($Ipv6Range in $Ipv6RangesList)
     {
+      # ipv6: revoke rule
       $revokeIpPermission = New-Object Amazon.EC2.Model.IpPermission -Property @{FromPort=$IpPermission.FromPort;ToPort=$IpPermission.ToPort;IpProtocol="$($IpPermission.IpProtocol)";Ipv6Ranges=$Ipv6Range}
       Revoke-EC2SecurityGroupIngress -GroupId $InfoObject.GroupId -IpPermissions $revokeIpPermission
       If($Debug){ Write-Host "[DEBUG]   Revoked IPv6 Rule: FromPort: $($IpPermission.FromPort), ToPort: $($IpPermission.ToPort), IpProtocol: $($IpPermission.IpProtocol), CidrIpv6: $($Ipv6Range.CidrIpv6), Description: $($Ipv6range.Description)" }
@@ -108,10 +110,11 @@ $IpPermissionsList = New-Object System.Collections.ArrayList
 
 ForEach ($Service in $Services)
 {
+  # ipv4: configure rule
   $newIpv4Range = New-Object Amazon.EC2.Model.IpRange -Property @{CidrIp="$($CidrIpv4.ip)/32";Description="$($ComputerName) ($($Service.Name))"}
   $newIpPermission = New-Object Amazon.EC2.Model.IpPermission -Property @{IpProtocol="$($Service.IpProtocol)";FromPort=$Service.FromPort;ToPort=$Service.ToPort;Ipv4Ranges=$newIpv4Range}
   If($Ipv4){ [void]$IpPermissionsList.Add($newIpPermission) }
-
+  # ipv6: configure rule
   $newIpv6Range = New-Object Amazon.EC2.Model.Ipv6Range -Property @{CidrIpv6="$($CidrIpv6.ip)/128";Description="$($ComputerName) ($($Service.Name))"}
   $newIpPermission = New-Object Amazon.EC2.Model.IpPermission -Property @{IpProtocol="$($Service.IpProtocol)";FromPort=$Service.FromPort;ToPort=$Service.ToPort;Ipv6Ranges=$newIpv6Range}
   If($Ipv6){ [void]$IpPermissionsList.Add($newIpPermission) }
@@ -125,11 +128,12 @@ ForEach ($IpPermission in $IpPermissionsList)
   $Ipv4RangesList = $IpPermission.Ipv4Ranges
   ForEach ($Ipv4Range in $Ipv4RangesList)
   {
-    $grantIpPermission = New-Object Amazon.EC2.Model.IpPermission -Property @{FromPort=$IpPermission.FromPort;ToPort=$IpPermission.ToPort;IpProtocol="$($IpPermission.IpProtocol)";Ipv4Ranges=$Ipv4Range}
+    # verify if rule already exists
     $existIpPermission = $SecGroup.IpPermissions | Where-Object {$_.FromPort -eq $IpPermission.FromPort -and $_.ToPort -eq $IpPermission.ToPort -and $_.IpProtocol -eq "$($IpPermission.IpProtocol)" -and $_.Ipv4Ranges.CidrIp -eq $Ipv4Range.CidrIp}
-    # verify if grant already exists
     If(!$existIpPermission.Count -gt 0)
     {
+      # ipv4: grant rule
+      $grantIpPermission = New-Object Amazon.EC2.Model.IpPermission -Property @{FromPort=$IpPermission.FromPort;ToPort=$IpPermission.ToPort;IpProtocol="$($IpPermission.IpProtocol)";Ipv4Ranges=$Ipv4Range}
       Grant-EC2SecurityGroupIngress -GroupId $InfoObject.GroupId -IpPermissions $grantIpPermission
       If($Debug){ Write-Host "[DEBUG]   Added IPv4 Rule: FromPort: $($IpPermission.FromPort), ToPort: $($IpPermission.ToPort), IpProtocol: $($IpPermission.IpProtocol), CidrIp: $($Ipv4Range.CidrIp), Description: $($Ipv4Range.Description)" }
       $Done=$true
@@ -143,11 +147,12 @@ ForEach ($IpPermission in $IpPermissionsList)
   $Ipv6RangesList = $IpPermission.Ipv6Ranges
   ForEach ($Ipv6Range in $Ipv6RangesList)
   {
-    $grantIpPermission = New-Object Amazon.EC2.Model.IpPermission -Property @{FromPort=$IpPermission.FromPort;ToPort=$IpPermission.ToPort;IpProtocol="$($IpPermission.IpProtocol)";Ipv6Ranges=$Ipv6Range}
+    # verify if rule already exists
     $existIpPermission = $SecGroup.IpPermissions | Where-Object {$_.FromPort -eq $IpPermission.FromPort -and $_.ToPort -eq $IpPermission.ToPort -and $_.IpProtocol -eq "$($IpPermission.IpProtocol)" -and $_.Ipv6Ranges.CidrIpv6 -eq $Ipv6Range.CidrIpv6}
-    # verify if grant already exists
     If(!$existIpPermission.Count -gt 0)
     {
+      # ipv6: grant rule
+      $grantIpPermission = New-Object Amazon.EC2.Model.IpPermission -Property @{FromPort=$IpPermission.FromPort;ToPort=$IpPermission.ToPort;IpProtocol="$($IpPermission.IpProtocol)";Ipv6Ranges=$Ipv6Range}
       Grant-EC2SecurityGroupIngress -GroupId $InfoObject.GroupId -IpPermissions $grantIpPermission
       If($Debug){ Write-Host "[DEBUG]   Added IPv6 Rule: FromPort: $($IpPermission.FromPort), ToPort: $($IpPermission.ToPort), IpProtocol: $($IpPermission.IpProtocol), CidrIpv6: $($Ipv6Range.CidrIpv6), Description: $($Ipv6range.Description)" }
       $Done=$true
