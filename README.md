@@ -13,7 +13,7 @@
 ### common settings
 
 **# update the following parameters: AccessKeyID, SecretAccessKeyID, Region, Ipv4, Ipv6**
-...
+```
 Param(
   [string]$AccessKeyID="XXXXXXXXXXXXXXXXXXXX",
   [string]$SecretAccessKeyID="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
@@ -23,14 +23,14 @@ Param(
   [switch]$Ipv6=$false,
   [switch]$SetAws=$true,
   [switch]$Debug=$true)
-...
+```
 
 **# add/remove services to be configured**
-...
+```
 $Services = @(
   [pscustomobject]@{Name='HTTP'; FromPort=80; ToPort=80; IpProtocol='tcp'}
   [pscustomobject]@{Name='HTTPS'; FromPort=443; ToPort=443; IpProtocol='tcp'}
   [pscustomobject]@{Name='RDP'; FromPort=3389; ToPort=3389; IpProtocol='tcp'}
   [pscustomobject]@{Name='SSH'; FromPort=6922; ToPort=6922; IpProtocol='tcp'}
 )
-...
+```
