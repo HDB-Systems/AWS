@@ -12,8 +12,8 @@
 
 ### common settings
 
-**# update the following parameters: AccessKeyID, SecretAccessKeyID, Region, Ipv4, Ipv6**
 ```
+# update the following parameters: AccessKeyID, SecretAccessKeyID, Region, Ipv4, Ipv6
 Param(
   [string]$AccessKeyID="XXXXXXXXXXXXXXXXXXXX",
   [string]$SecretAccessKeyID="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
@@ -25,8 +25,8 @@ Param(
   [switch]$Debug=$true)
 ```
 
-**# add/remove services to be configured**
 ```
+# add/remove services to be configured
 $Services = @(
   [pscustomobject]@{Name='HTTP'; FromPort=80; ToPort=80; IpProtocol='tcp'}
   [pscustomobject]@{Name='HTTPS'; FromPort=443; ToPort=443; IpProtocol='tcp'}
