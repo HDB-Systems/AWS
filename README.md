@@ -30,3 +30,4 @@ $Services = @(
   [pscustomobject]@{Name='RDP'; FromPort=3389; ToPort=3389; IpProtocol='tcp'}
   [pscustomobject]@{Name='SSH'; FromPort=6922; ToPort=6922; IpProtocol='tcp'}
 )
+
