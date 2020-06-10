@@ -10,9 +10,9 @@ uses the computer name to distinguish its rules from those of other users in the
 written in PowerShell
 uses AWS Tools for PowerShell
 
-common settings
+# common settings
 
-# update the following parameters: AccessKeyID, SecretAccessKeyID, Region, Ipv4, Ipv6
+update the following parameters: AccessKeyID, SecretAccessKeyID, Region, Ipv4, Ipv6
 Param(
   [string]$AccessKeyID="XXXXXXXXXXXXXXXXXXXX",
   [string]$SecretAccessKeyID="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
@@ -23,7 +23,7 @@ Param(
   [switch]$SetAws=$true,
   [switch]$Debug=$true)
 
-# add/remove services to be configured
+add/remove services to be configured
 $Services = @(
   [pscustomobject]@{Name='HTTP'; FromPort=80; ToPort=80; IpProtocol='tcp'}
   [pscustomobject]@{Name='HTTPS'; FromPort=443; ToPort=443; IpProtocol='tcp'}
