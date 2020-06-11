@@ -58,11 +58,11 @@ If($Debug){ Write-Host "[DEBUG] Computer Name is $($ComputerName)" }
 
 # get my external ipv4
 If($Ipv4){ $CidrIpv4 = Invoke-RestMethod https://api.ipify.org?format=json }
-If($Debug){ If($Ipv4){ Write-Host "[DEBUG] External Ipv4 is $($CidrIpv4.ip)" } }
+If($Ipv4){ If($Debug){ Write-Host "[DEBUG] External Ipv4 is $($CidrIpv4.ip)" } }
 
 # get my external ipv6
 If($Ipv6){ $CidrIpv6 = Invoke-RestMethod https://api6.ipify.org?format=json }
-If($Debug){ If($Ipv6){ Write-Host "[DEBUG] External Ipv6 is $($CidrIpv6.ip)" } }
+If($Ipv6){ If($Debug){ Write-Host "[DEBUG] External Ipv6 is $($CidrIpv6.ip)" } }
 
 # security group to grant/revoke permissions
 $SecGroup = Get-EC2SecurityGroup -GroupId $InfoObject.GroupId
