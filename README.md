@@ -12,15 +12,25 @@
 
 ### steps to install
 
-* Execute PowerShell as Administrator
+* Configure policy with correct security group
+* On AWS create a IAM user and attach inline policy
+* Configure script (security group, access key, secret key, region, services ...)
+* Execute PowerShell as Administrator and execute the commands bellow
 
 ```
 # Install AWS Tools for PowerShell
 # Change execution policy to RemoteSigned
 > Install-Module -name AWSPowerShell.NetCore
 > Set-ExecutionPolicy -ExecutionPolicy RemoteSigned
-> Exit
 ```
+* Execute PowerShell as Normal User and execute script
+
+### how to run the script automatically?
+* Create a task in Windows Scheduler
+* Add event trigger Microsoft-Windows-NetworkProfile/Operational, with Source=NetworkProfile and EventId=10000
+* Add action to execute powershell script - program/script=powershell, args=-File C:\Users\JohnDoe\update-aws-security-group.ps1
+
+The task will be performed whenever you connect to the internet
 
 ### configuration
 
