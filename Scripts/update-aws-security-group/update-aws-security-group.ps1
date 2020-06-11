@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+# based on the code available in https://8kmiles.com/blog/powershell-automating-aws-security-groups-2/
+#
 # HDB Systems <contato@hdbsystems.com.br>
 # modified 2020-06-10
 #
