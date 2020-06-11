@@ -10,7 +10,7 @@
 * written in PowerShell
 * uses AWS Tools for PowerShell
 
-### common settings
+### configuration
 
 ```
 # update the following parameters: AccessKeyID, SecretAccessKeyID, Region, Ipv4, Ipv6
