@@ -25,6 +25,13 @@
 ### configuration
 
 ```
+# sets security group on IAM user policy
+      "Resource": [
+        "arn:aws:ec2:*:*:security-group/sg-XXXXXXXXXXXXXXXXX"
+      ]
+```
+
+```
 # update the following parameters: AccessKeyID, SecretAccessKeyID, Region, Ipv4, Ipv6
 Param(
   [string]$AccessKeyID="XXXXXXXXXXXXXXXXXXXX",
