@@ -10,6 +10,17 @@
 * written in PowerShell
 * uses AWS Tools for PowerShell
 
+### steps to install
+
+* Install AWS Tools for PowerShell
+* Change execution policy to RemoteSigned
+
+```
+> Install-Module -name AWSPowerShell.NetCore
+> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned
+> Exit
+```
+
 ### configuration
 
 ```
