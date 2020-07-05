@@ -14,23 +14,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# based on the code available in https://8kmiles.com/blog/powershell-automating-aws-security-groups-2/
+# USAGE: update-aws-security-group.ps1 -AccessKeyID "XXXXXXXXXXXXXXXXXXXX" -SecretAccessKeyID "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" -Region "xx-xxxx-x" -SecurityGroup "sg-XXXXXXXXXXXXXXXXX" -Ipv4 -Ipv6 -Verbose
 #
 # HDB Systems <contato@hdbsystems.com.br>
-# modified 2020-06-10
+# modified 2020-07-05
 #
 # -------------------------------------------------------------------------
 
-# update the following parameters: AccessKeyID, SecretAccessKeyID, Region, Ipv4, Ipv6
+# parameters
 Param(
-  [string]$AccessKeyID="XXXXXXXXXXXXXXXXXXX",
-  [string]$SecretAccessKeyID="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-  [string]$Region="us-east-1",
-  [string]$SecurityGroup="sg-XXXXXXXXXXXXXXXXX",
-  [switch]$Ipv4=$true,
-  [switch]$Ipv6=$false,
-  [switch]$SetAws=$true,
-  [switch]$Debug=$true)
+  [string]$AccessKeyID,
+  [string]$SecretAccessKeyID,
+  [string]$Region,
+  [string]$SecurityGroup,
+  [switch]$Ipv4,
+  [switch]$Ipv6,
+  [switch]$Verbose
+)
 
 $InfoObject = New-Object PSObject -Property @{
   AccessKey = $AccessKeyID
@@ -44,35 +44,64 @@ $Services = @(
   [pscustomobject]@{Name='HTTP'; FromPort=80; ToPort=80; IpProtocol='tcp'}
   [pscustomobject]@{Name='HTTPS'; FromPort=443; ToPort=443; IpProtocol='tcp'}
   [pscustomobject]@{Name='RDP'; FromPort=3389; ToPort=3389; IpProtocol='tcp'}
-  [pscustomobject]@{Name='SSH'; FromPort=22; ToPort=22; IpProtocol='tcp'}
+  [pscustomobject]@{Name='SSH'; FromPort=6922; ToPort=6922; IpProtocol='tcp'}
 )
 
-# set aws credentials
-If($SetAws)
-{
-  Set-AWSCredentials -AccessKey $InfoObject.AccessKey -SecretKey $InfoObject.SecretKey
-  Set-DefaultAWSRegion -Region $InfoObject.Region
+# timestamp
+$Timestamp = Get-Date -Format "dddd dd/MM/yyyy HH:mm K"
+# script dir and filename (without extension)
+$ScriptDir = (Get-Item $PSCommandPath).DirectoryName
+$ScriptBasename = (Get-Item $PSCommandPath).Basename
+# log file
+$LogFile = "$($ScriptDir)\$($ScriptBasename).log"
+
+# log function
+Function Log ($Message) {
+  If($Verbose){ Write-Host "$($Message)" }
+  Add-Content $LogFile $Message
 }
+
+# removing previous log
+If(Test-Path $LogFile){ Remove-Item $LogFile }
+
+# init
+Log "Executing script on $($Timestamp)"
+Log " "
+
+# mandatory parameters
+If(!($AccessKeyID -and $SecretAccessKeyID -and $Region -and $SecurityGroup)){ Throw "You must supply a value for -AccessKeyID, -SecretAccessKeyID, -Region and -SecurityGroup parameters" }
+
+# validating parms
+If (!($Ipv4 -or $Ipv6)) { Throw "You must supply -Ipv4 and/or -Ipv6 parameters" } 
+
+# setting aws info
+# credential
+Set-AWSCredentials -AccessKey $InfoObject.AccessKey -SecretKey $InfoObject.SecretKey
+Log "Setting AWS credential $($InfoObject.AccessKey)"
+# region
+Set-DefaultAWSRegion -Region $InfoObject.Region
+Log "Setting AWS region to $($InfoObject.Region)"
+# security group to grant/revoke permissions
+$SecGroup = Get-EC2SecurityGroup -GroupId $InfoObject.GroupId
+Log "Setting AWS security group to $($SecGroup.GroupId) - $($SecGroup.GroupName)"
+Log " "
 
 # get my computer name
 $ComputerName = Get-WMIObject Win32_ComputerSystem | Select-Object -ExpandProperty name
-If($Debug){ Write-Host "[DEBUG] Computer Name is $($ComputerName)" }
+Log "Computer name is $($ComputerName)"
 
 # get my external ipv4
 If($Ipv4){ $CidrIpv4 = Invoke-RestMethod https://api.ipify.org?format=json }
-If($Ipv4){ If($Debug){ Write-Host "[DEBUG] External Ipv4 is $($CidrIpv4.ip)" } }
+If($Ipv4){ Log "External Ipv4 is $($CidrIpv4.ip)" }
 
 # get my external ipv6
 If($Ipv6){ $CidrIpv6 = Invoke-RestMethod https://api6.ipify.org?format=json }
-If($Ipv6){ If($Debug){ Write-Host "[DEBUG] External Ipv6 is $($CidrIpv6.ip)" } }
-
-# security group to grant/revoke permissions
-$SecGroup = Get-EC2SecurityGroup -GroupId $InfoObject.GroupId
-If($Debug){ Write-Host "[DEBUG] Security group is $($SecGroup.GroupId) - $($SecGroup.GroupName)" }
+If($Ipv6){ Log "External Ipv6 is $($CidrIpv6.ip)" }
+Log " "
 
 # revoke outdated permissions
 # Description field equals "ComputerName (*)" and Ip different of MyIp
-If($Debug){ Write-Host "[DEBUG] Removing outdated permissions for this computer on security group" }
+Log "Removing outdated permissions for this computer on security group"
 
 $Done=$false
 
@@ -88,7 +117,7 @@ ForEach ($Service in $Services)
       # ipv4: revoke rule
       $revokeIpPermission = New-Object Amazon.EC2.Model.IpPermission -Property @{FromPort=$IpPermission.FromPort;ToPort=$IpPermission.ToPort;IpProtocol="$($IpPermission.IpProtocol)";Ipv4Ranges=$Ipv4Range}
       Revoke-EC2SecurityGroupIngress -GroupId $InfoObject.GroupId -IpPermissions $revokeIpPermission
-      If($Debug){ Write-Host "[DEBUG]   Revoked IPv4 Rule: FromPort: $($IpPermission.FromPort), ToPort: $($IpPermission.ToPort), IpProtocol: $($IpPermission.IpProtocol), CidrIp: $($Ipv4Range.CidrIp), Description: $($Ipv4Range.Description)" }
+      Log "  Revoked Ipv4 rule: FromPort: $($IpPermission.FromPort), ToPort: $($IpPermission.ToPort), IpProtocol: $($IpPermission.IpProtocol), CidrIp: $($Ipv4Range.CidrIp), Description: $($Ipv4Range.Description)"
       $Done=$true
     }
 
@@ -98,15 +127,15 @@ ForEach ($Service in $Services)
       # ipv6: revoke rule
       $revokeIpPermission = New-Object Amazon.EC2.Model.IpPermission -Property @{FromPort=$IpPermission.FromPort;ToPort=$IpPermission.ToPort;IpProtocol="$($IpPermission.IpProtocol)";Ipv6Ranges=$Ipv6Range}
       Revoke-EC2SecurityGroupIngress -GroupId $InfoObject.GroupId -IpPermissions $revokeIpPermission
-      If($Debug){ Write-Host "[DEBUG]   Revoked IPv6 Rule: FromPort: $($IpPermission.FromPort), ToPort: $($IpPermission.ToPort), IpProtocol: $($IpPermission.IpProtocol), CidrIpv6: $($Ipv6Range.CidrIpv6), Description: $($Ipv6range.Description)" }
+      Log "  Revoked Ipv6 rule: FromPort: $($IpPermission.FromPort), ToPort: $($IpPermission.ToPort), IpProtocol: $($IpPermission.IpProtocol), CidrIpv6: $($Ipv6Range.CidrIpv6), Description: $($Ipv6range.Description)"
       $Done=$true
     }
   }
 }
-If(!$Done){ If($Debug){ Write-Host "[DEBUG]   no rules to remove" } }
+If(!$Done){ Log "  no rules to remove" }
 
 # configure new permissions
-If($Debug){ Write-Host "[DEBUG] Configuring new permissions for this computer on security group" }
+Log "Configuring new permissions for this computer on security group"
 
 $IpPermissionsList = New-Object System.Collections.ArrayList
 
@@ -137,12 +166,12 @@ ForEach ($IpPermission in $IpPermissionsList)
       # ipv4: grant rule
       $grantIpPermission = New-Object Amazon.EC2.Model.IpPermission -Property @{FromPort=$IpPermission.FromPort;ToPort=$IpPermission.ToPort;IpProtocol="$($IpPermission.IpProtocol)";Ipv4Ranges=$Ipv4Range}
       Grant-EC2SecurityGroupIngress -GroupId $InfoObject.GroupId -IpPermissions $grantIpPermission
-      If($Debug){ Write-Host "[DEBUG]   Added IPv4 Rule: FromPort: $($IpPermission.FromPort), ToPort: $($IpPermission.ToPort), IpProtocol: $($IpPermission.IpProtocol), CidrIp: $($Ipv4Range.CidrIp), Description: $($Ipv4Range.Description)" }
+      Log "  Added Ipv4 rule: FromPort: $($IpPermission.FromPort), ToPort: $($IpPermission.ToPort), IpProtocol: $($IpPermission.IpProtocol), CidrIp: $($Ipv4Range.CidrIp), Description: $($Ipv4Range.Description)"
       $Done=$true
     }
     Else
     {
-      If($Debug){ Write-Host "[DEBUG]   WARNING: IPv4 Rule Already Exists: FromPort: $($IpPermission.FromPort), ToPort: $($IpPermission.ToPort), IpProtocol: $($IpPermission.IpProtocol), CidrIp: $($Ipv4Range.CidrIp)" }
+      Log "  WARNING: Ipv4 rule already exists: FromPort: $($IpPermission.FromPort), ToPort: $($IpPermission.ToPort), IpProtocol: $($IpPermission.IpProtocol), CidrIp: $($Ipv4Range.CidrIp)"
     }
   }
 
@@ -156,13 +185,13 @@ ForEach ($IpPermission in $IpPermissionsList)
       # ipv6: grant rule
       $grantIpPermission = New-Object Amazon.EC2.Model.IpPermission -Property @{FromPort=$IpPermission.FromPort;ToPort=$IpPermission.ToPort;IpProtocol="$($IpPermission.IpProtocol)";Ipv6Ranges=$Ipv6Range}
       Grant-EC2SecurityGroupIngress -GroupId $InfoObject.GroupId -IpPermissions $grantIpPermission
-      If($Debug){ Write-Host "[DEBUG]   Added IPv6 Rule: FromPort: $($IpPermission.FromPort), ToPort: $($IpPermission.ToPort), IpProtocol: $($IpPermission.IpProtocol), CidrIpv6: $($Ipv6Range.CidrIpv6), Description: $($Ipv6range.Description)" }
+      Log "  Added Ipv6 rule: FromPort: $($IpPermission.FromPort), ToPort: $($IpPermission.ToPort), IpProtocol: $($IpPermission.IpProtocol), CidrIpv6: $($Ipv6Range.CidrIpv6), Description: $($Ipv6range.Description)"
       $Done=$true
     }
     Else
     {
-      If($Debug){ Write-Host "[DEBUG]   WARNING: IPv6 Rule Already Exists: FromPort: $($IpPermission.FromPort), ToPort: $($IpPermission.ToPort), IpProtocol: $($IpPermission.IpProtocol), CidrIpv6: $($Ipv6Range.CidrIpv6)" }
+      Log "  WARNING: Ipv6 rule already exists: FromPort: $($IpPermission.FromPort), ToPort: $($IpPermission.ToPort), IpProtocol: $($IpPermission.IpProtocol), CidrIpv6: $($Ipv6Range.CidrIpv6)"
     }
   }
 }
-If(!$Done){ If($Debug){ Write-Host "[DEBUG]   no rules to add" } }
+If(!$Done){ Log "  no rules to add" }
