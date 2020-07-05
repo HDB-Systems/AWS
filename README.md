@@ -29,7 +29,7 @@
 * Create a task in Windows Scheduler
 * Add event trigger Microsoft-Windows-NetworkProfile/Operational, with Source=NetworkProfile and EventId=10000
 * Add action to execute powershell script
-  # update the following parameters: AccessKeyID, SecretAccessKeyID, Region, Ipv4, Ipv6
+  ### update the following parameters: AccessKeyID, SecretAccessKeyID, Region, Ipv4, Ipv6
   program/script=powershell
   args=-Command "& 'C:\Users\Public\update-aws-security-group.ps1' -AccessKeyID 'XXXXXXXXXXXXXXXXXXXXX' -SecretAccessKeyID 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' -Region 'XX-XXXX-X' -SecurityGroup 'sg-XXXXXXXXXXXXXXXXXXXXXX' -Ipv4 -Verbose"
   start on=C:\Users\Public\
