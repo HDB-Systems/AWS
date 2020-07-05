@@ -28,7 +28,12 @@
 ### how to run the script automatically?
 * Create a task in Windows Scheduler
 * Add event trigger Microsoft-Windows-NetworkProfile/Operational, with Source=NetworkProfile and EventId=10000
-* Add action to execute powershell script - program/script=powershell, args=-File C:\Users\JohnDoe\update-aws-security-group.ps1
+* Add action to execute powershell script
+  # update the following parameters: AccessKeyID, SecretAccessKeyID, Region, Ipv4, Ipv6
+  program/script=powershell
+  args=-Command "& 'C:\Users\Public\update-aws-security-group.ps1' -AccessKeyID 'XXXXXXXXXXXXXXXXXXXXX' -SecretAccessKeyID 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' -Region 'XX-XXXX-X' -SecurityGroup 'sg-XXXXXXXXXXXXXXXXXXXXXX' -Ipv4 -Verbose"
+  start on=C:\Users\Public\
+* Put powershell script on C:\Users\Public\
 
 The task will be performed whenever you connect to the internet
 
@@ -42,20 +47,7 @@ The task will be performed whenever you connect to the internet
 ```
 
 ```
-# update the following parameters: AccessKeyID, SecretAccessKeyID, Region, Ipv4, Ipv6
-Param(
-  [string]$AccessKeyID="XXXXXXXXXXXXXXXXXXXX",
-  [string]$SecretAccessKeyID="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-  [string]$Region="us-east-1",
-  [string]$SecurityGroup="sg-XXXXXXXXXXXXXXXXXXX",
-  [switch]$Ipv4=$true,
-  [switch]$Ipv6=$false,
-  [switch]$SetAws=$true,
-  [switch]$Debug=$true)
-```
-
-```
-# add/remove services to be configured
+# add/remove services to be configured (inside script)
 $Services = @(
   [pscustomobject]@{Name='HTTP'; FromPort=80; ToPort=80; IpProtocol='tcp'}
   [pscustomobject]@{Name='HTTPS'; FromPort=443; ToPort=443; IpProtocol='tcp'}
