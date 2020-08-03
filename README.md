@@ -23,7 +23,6 @@
 > Install-Module -name AWSPowerShell.NetCore
 > Set-ExecutionPolicy -ExecutionPolicy RemoteSigned
 ```
-* Execute PowerShell as Normal User and execute script
 
 ### how to run the script automatically?
 * Create a task in Windows Scheduler
