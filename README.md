@@ -31,7 +31,7 @@
 ```
   # update the following parameters: AccessKeyID, SecretAccessKeyID, Region, Ipv4, Ipv6
   program/script=powershell
-  args=-Command "& 'C:\Users\Public\update-aws-security-group.ps1' -AccessKeyID 'XXXXXXXXXXXXXXXXXXXXX' -SecretAccessKeyID 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' -Region 'XX-XXXX-X' -SecurityGroup 'sg-XXXXXXXXXXXXXXXXXXXXXX' -Ipv4 -Verbose"
+  args=-ExecutionPolicy Bypass C:\Users\Public\update-aws-security-group.ps1 -AccessKeyID 'xxxxxxxxxxxxxxxxxxxx' -SecretAccessKeyID 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' -Region 'xx-xxxx-x' -SecurityGroup 'sg-xxxxxxxxxxxxxxxxx' -Ipv4 -Verbose
   start on=C:\Users\Public\
 ```
 * Put powershell script on C:\Users\Public\
